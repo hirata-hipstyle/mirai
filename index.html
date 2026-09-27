@@ -69,10 +69,10 @@ h2{font-size:11px;letter-spacing:.28em;color:var(--m);margin:0 0 10px;font-weigh
 </main>
 <div class="bar"><form id="f"><button type="button" class="snd" id="snd" title="声">🔊</button><input id="q" placeholder="話しかける…" autocomplete="off" enterkeyhint="send"><button>➤</button></form></div>
 <script>
-var URL_='https://script.google.com/macros/s/AKfycbwBv2enMS5voXIBrqbJGgelDHoH3VXkJspIf4SZJOB5VtjL_WXmmZ03cq8WShxG0oL-ng/exec', K=(function(){var k=new URLSearchParams(location.search).get('k')||'';try{if(k)localStorage.setItem('mk',k);else k=localStorage.getItem('mk')||''}catch(e){}return k})(), voice=true, loaded={};
+var URL_=(function(){var d='https://script.google.com/macros/s/AKfycbwBv2enMS5voXIBrqbJGgeIDHoH3VXkJspIf4SZJOB5VtjL_WXmmZ03cq8WShxG0oL-ng/exec',u=new URLSearchParams(location.search).get('u')||'';try{if(/^https:\/\/script\.google\.com\//.test(u))localStorage.setItem('mu',u);else u=localStorage.getItem('mu')||''}catch(e){}return /^https:\/\/script\.google\.com\//.test(u)?u:d})(), K=(function(){var k=new URLSearchParams(location.search).get('k')||'';try{if(k)localStorage.setItem('mk',k);else k=localStorage.getItem('mk')||''}catch(e){}return k})(), voice=true, loaded={};
 function $(i){return document.getElementById(i)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function api(action,data){data=data||{};data.action=action;data.token=K;return fetch(URL_,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)}).then(function(r){return r.json()})}
+function api(action,data){data=data||{};data.action=action;data.token=K;return fetch(URL_,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t)}catch(e){throw Error('HTTP '+r.status+' '+t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,80))}})})}
 function state(s){$('core').className='core '+(s||'');}
 function tick(){var d=new Date();$('tm').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);$('dt').textContent=(d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'}
 setInterval(tick,10000);tick();
@@ -81,7 +81,7 @@ function show(t){var s=$('say');s.textContent=t;s.className='say'+(t.length>70?'
   var m=t.match(/[①②③④⑤⑥⑦⑧⑨]/g)||[];m.filter(function(x,i){return m.indexOf(x)===i}).slice(0,6).forEach(function(x){var b=document.createElement('button');b.className='chip';b.textContent=x+'で';b.onclick=function(){ask(x+'で')};c.appendChild(b)});
   if(/よろしいですか|よいですか|いいですか|送ってよい|登録してよい/.test(t)){[['はい、お願い','ok'],['やめる','']].forEach(function(a){var b=document.createElement('button');b.className='chip '+a[1];b.textContent=a[0];b.onclick=function(){ask(a[0])};c.appendChild(b)})}}
 function ask(t){t=String(t||'').trim();if(!t)return;$('q').value='';show('「'+t+'」\n考えています…');state('think');
-  api('ask',{text:t,mode:'app'}).then(function(j){state('');show(j.answer||'…');speak(j.answer||'');if(/予定|服|登録/.test(t))home()}).catch(function(){state('');show('つながりませんでした。電波を確認して、もう一度どうぞ。')})}
+  api('ask',{text:t,mode:'app'}).then(function(j){state('');show(j.answer||'…');speak(j.answer||'');if(/予定|服|登録/.test(t))home()}).catch(function(e){state('');show('つながりませんでした。電波を確認して、もう一度どうぞ。\n（'+(e&&e.message||e)+'）')})}
 $('f').onsubmit=function(e){e.preventDefault();ask($('q').value)};
 $('snd').onclick=function(){voice=!voice;this.textContent=voice?'🔊':'🔇';if(!voice&&window.speechSynthesis)speechSynthesis.cancel()};
 function evRows(list){return list.length?list.map(function(e){return '<div class="ev'+(e.off?' off':'')+'"><b>'+esc(e.time)+'</b><span>'+esc(e.title)+(e.location?' <span class="muted">／'+esc(e.location)+'</span>':'')+'</span></div>'}).join(''):'<div class="muted">予定はありません</div>'}
@@ -90,7 +90,7 @@ function home(){api('app.home').then(function(j){if(j.error){show(j.error);retur
   $('ev').innerHTML='<div class="day">今日</div>'+evRows(j.today||[])+'<div class="day">明日</div>'+evRows(j.tomorrow||[]);
   $('wx').innerHTML=(j.weather||[]).map(function(w,i){return '<div>'+(i?'明日':'今日')+'<b>'+esc(w.weather)+'</b>'+esc(w.max)+'° / '+esc(w.min)+'°<br><span class="muted">☔'+esc(w.rain_percent)+'%</span></div>'}).join('');
   $('fit').textContent=j.outfit||'まだ明日の服の提案はありません（毎晩19:45ごろに届きます）';$('fit').className='fit'+(j.outfit?'':' muted');
-  $('fitpics').innerHTML=(j.outfit_images||[]).map(function(u){return '<img src="'+esc(u)+'">'}).join('')}).catch(function(){show('つながりませんでした。電波を確認してください。')})}
+  $('fitpics').innerHTML=(j.outfit_images||[]).map(function(u){return '<img src="'+esc(u)+'">'}).join('')}).catch(function(e){show('つながりませんでした。\n（'+(e&&e.message||e)+'）')})}
 function closet(){api('app.closet').then(function(j){$('cl').innerHTML=(j.items||[]).map(function(x){return '<figure>'+(x.img?'<img loading="lazy" src="'+esc(x.img)+'">':'')+'<figcaption>'+esc(x.name)+(x.brand?'<br>'+esc(x.brand):'')+'</figcaption></figure>'}).join('')||'<span class="muted">まだ服が登録されていません</span>'})}
 function minutes(){api('app.minutes').then(function(j){$('mn').innerHTML=(j.minutes||[]).map(function(m){return '<a href="'+esc(m.url)+'" target="_blank">📝 '+esc(m.name)+'</a>'}).join('')||'<span class="muted">まだ議事録はありません</span>'})}
 document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});['home','closet','min'].forEach(function(id){$(id).hidden=id!==b.dataset.t});if(b.dataset.t==='closet'&&!loaded.cl){loaded.cl=1;closet()}if(b.dataset.t==='min'&&!loaded.mn){loaded.mn=1;minutes()}}});
