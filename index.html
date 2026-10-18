@@ -16,7 +16,9 @@
   function show(h){shown=true;document.open();document.write(h);document.close()}
   if(!k){msg('合言葉がありません。LINEのみらいくんに「スマホの設定」と送って、届いたリンクから開いてください。');return}
   var cached=g('mui');
-  var p=fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'app.ui',token:k})}).then(function(r){return r.json()});
+  // 画面は会社のサーバーから読む（速い）。つながらない時だけ、Googleのみらいくんから
+  var S='https://mirai.hipstyle.net/exec', get=function(x){return fetch(x,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'app.ui',token:k})}).then(function(r){return r.json()})};
+  var p=get(S).then(function(j){if(j&&j.html)return j;throw 0}).catch(function(){return get(u)});
   if(cached){show(cached);p.then(function(j){if(j&&j.html)st('mui',j.html)}).catch(function(){});return} // 前回の画面をすぐ出し、最新版は次に開いた時に
   p.then(function(j){if(j&&j.html){st('mui',j.html);show(j.html)}else msg((j&&j.error)||'読み込めませんでした')}).catch(function(e){msg('つながりませんでした（'+(e&&e.message||e)+'）')});
 })();
